@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard — Vehicle Inventory</title>
+<link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <h1>Vehicle Inventory</h1>
+    <nav>
+      <a href="/dashboard.html" class="active">Dashboard</a>
+      <a href="/vehicles.html">Vehicles</a>
+      <a href="/vehicle-form.html">Add Vehicle</a>
+    </nav>
+    <button class="secondary logout-btn" id="logout-btn">Sign out</button>
+  </aside>
+  <main class="main">
+    <h2>Dashboard</h2>
+    <div id="stats" class="stat-grid"></div>
+
+    <div class="card">
+      <h3 style="margin-top:0">Recently added</h3>
+      <table>
+        <thead>
+          <tr><th></th><th>Vehicle</th><th>VIN</th><th>Status</th><th>Price</th><th>Added</th></tr>
+        </thead>
+        <tbody id="recent-body"></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+<script src="/js/api.js"></script>
+<script src="/js/dashboard.js"></script>
+</body>
+</html>

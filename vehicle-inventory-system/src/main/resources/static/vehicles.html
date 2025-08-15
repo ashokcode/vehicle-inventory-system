@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vehicles — Vehicle Inventory</title>
+<link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <h1>Vehicle Inventory</h1>
+    <nav>
+      <a href="/dashboard.html">Dashboard</a>
+      <a href="/vehicles.html" class="active">Vehicles</a>
+      <a href="/vehicle-form.html">Add Vehicle</a>
+    </nav>
+    <button class="secondary logout-btn" id="logout-btn">Sign out</button>
+  </aside>
+  <main class="main">
+    <h2>Vehicles</h2>
+
+    <div class="toolbar">
+      <input id="f-q" placeholder="Search brand / model / VIN / engine">
+      <input id="f-brand" placeholder="Brand">
+      <input id="f-year" placeholder="Year" type="number">
+      <select id="f-status"><option value="">Any status</option></select>
+      <select id="f-condition"><option value="">Any condition</option></select>
+      <button id="apply-filters">Filter</button>
+      <button class="secondary" id="clear-filters">Clear</button>
+      <a class="btn" href="/vehicle-form.html" style="margin-left:auto">+ Add vehicle</a>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th></th><th>Vehicle</th><th>VIN</th><th>Mileage</th><th>Price</th><th>Status</th><th>Condition</th><th></th></tr>
+      </thead>
+      <tbody id="vehicle-body"></tbody>
+    </table>
+
+    <div class="pagination">
+      <button class="secondary" id="prev-page">Prev</button>
+      <span id="page-info"></span>
+      <button class="secondary" id="next-page">Next</button>
+    </div>
+  </main>
+</div>
+<script src="/js/api.js"></script>
+<script src="/js/vehicles.js"></script>
+</body>
+</html>

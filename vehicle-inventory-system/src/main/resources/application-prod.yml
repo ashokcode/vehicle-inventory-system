@@ -1,0 +1,19 @@
+# Points at the real Supabase Postgres instance. Get the JDBC connection string
+# from Supabase → Project Settings → Database → Connection string (URI), and
+# convert it to JDBC form: jdbc:postgresql://<host>:<port>/<database>
+spring:
+  datasource:
+    url: ${SUPABASE_DB_URL}
+    username: ${SUPABASE_DB_USERNAME}
+    password: ${SUPABASE_DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+logging:
+  level:
+    com.dealerhub.inventory: INFO

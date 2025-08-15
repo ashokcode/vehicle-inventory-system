@@ -1,0 +1,443 @@
+<title>Vehicle Inventory Platform</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600;700&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #F5F5F1;
+    --surface: #FFFFFF;
+    --surface-muted: #EAEAE3;
+    --border: #D9D8CE;
+    --ink: #201C15;
+    --ink-soft: #5C574A;
+    --accent: #B0431B;
+    --accent-ink: #7A2E12;
+    --accent-soft: #F6E2D6;
+    --status-good: #2F8F5B;
+    --status-good-soft: #E1F1E8;
+    --status-warn: #A8721F;
+    --status-warn-soft: #F5EAD5;
+    --status-bad: #B23B24;
+    --status-bad-soft: #F7E2DC;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --sans: "Source Sans 3", -apple-system, "Segoe UI", sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #17140F;
+      --surface: #211D16;
+      --surface-muted: #2A251C;
+      --border: #3A3327;
+      --ink: #EFEAE0;
+      --ink-soft: #B8AF9E;
+      --accent: #E07444;
+      --accent-ink: #F4C4A8;
+      --accent-soft: #3A2418;
+      --status-good: #62C695;
+      --status-good-soft: #163227;
+      --status-warn: #E0A94A;
+      --status-warn-soft: #33280F;
+      --status-bad: #E58468;
+      --status-bad-soft: #3A1F17;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #17140F;
+    --surface: #211D16;
+    --surface-muted: #2A251C;
+    --border: #3A3327;
+    --ink: #EFEAE0;
+    --ink-soft: #B8AF9E;
+    --accent: #E07444;
+    --accent-ink: #F4C4A8;
+    --accent-soft: #3A2418;
+    --status-good: #62C695;
+    --status-good-soft: #163227;
+    --status-warn: #E0A94A;
+    --status-warn-soft: #33280F;
+    --status-bad: #E58468;
+    --status-bad-soft: #3A1F17;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection { background: var(--accent-soft); color: var(--accent-ink); }
+  a { color: var(--accent-ink); }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 56px 24px 96px; }
+  .wide { max-width: 1080px; }
+
+  h1, h2, h3 { font-family: var(--mono); font-weight: 600; text-wrap: balance; color: var(--ink); }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    font-weight: 500;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--accent-ink);
+  }
+
+  header.masthead {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  h1.title { font-size: clamp(30px, 4.5vw, 42px); line-height: 1.15; margin: 0; letter-spacing: -0.01em; }
+  .subtitle { font-size: 18px; color: var(--ink-soft); max-width: 62ch; margin: 0; }
+
+  .scope-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .scope-tags span {
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 5px 11px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--ink-soft);
+    background: var(--surface);
+  }
+
+  .meta-row { display: flex; flex-wrap: wrap; gap: 24px; font-size: 13.5px; color: var(--ink-soft); font-family: var(--mono); }
+  .meta-row strong { color: var(--ink); font-weight: 500; }
+
+  nav.toc { margin: 36px 0 8px; padding: 20px 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+  nav.toc .eyebrow { display: block; margin-bottom: 12px; }
+  nav.toc ol { margin: 0; padding: 0 0 0 1.3em; columns: 2; column-gap: 32px; font-size: 14.5px; }
+  nav.toc li { margin-bottom: 7px; break-inside: avoid; }
+  nav.toc a { text-decoration: none; }
+  nav.toc a:hover { text-decoration: underline; }
+
+  .callout {
+    display: flex;
+    gap: 14px;
+    padding: 18px 20px;
+    background: var(--accent-soft);
+    border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+    border-radius: 8px;
+    font-size: 15px;
+    margin: 40px 0;
+  }
+  .callout .mark { font-family: var(--mono); font-weight: 700; color: var(--accent-ink); flex-shrink: 0; }
+  .callout p { margin: 0 0 8px; color: var(--ink); }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout strong { color: var(--accent-ink); }
+
+  section { margin-top: 64px; }
+  section > .eyebrow { display: block; margin-bottom: 8px; }
+
+  h2 { font-size: 23px; margin: 0 0 18px; display: flex; align-items: baseline; gap: 12px; }
+  h2 .num { color: var(--accent-ink); font-size: 15px; }
+  h3 { font-size: 16.5px; margin: 28px 0 10px; }
+
+  p { margin: 0 0 14px; max-width: 68ch; }
+  section > p:first-of-type { margin-top: 0; }
+
+  ul.plain, ol.plain { margin: 0 0 14px; padding-left: 1.35em; max-width: 68ch; }
+  ul.plain li, ol.plain li { margin-bottom: 7px; }
+
+  code, .code {
+    font-family: var(--mono);
+    font-size: 0.88em;
+    background: var(--surface-muted);
+    padding: 0.12em 0.4em;
+    border-radius: 4px;
+  }
+
+  .table-scroll { overflow-x: auto; margin: 0 0 14px; }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 560px;
+    font-size: 14.5px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  th, td { text-align: left; padding: 11px 16px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  thead th {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    background: var(--surface-muted);
+  }
+  tbody tr:last-child td { border-bottom: none; }
+
+  .pill {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 2px 9px;
+    border-radius: 100px;
+  }
+  .pill.good { background: var(--status-good-soft); color: var(--status-good); }
+  .pill.warn { background: var(--status-warn-soft); color: var(--status-warn); }
+  .pill.bad  { background: var(--status-bad-soft);  color: var(--status-bad); }
+
+  figure { margin: 24px 0 8px; padding: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+  figure.bleed { margin-left: calc(50% - 50vw + 12px); margin-right: calc(50% - 50vw + 12px); }
+  figure svg { display: block; width: 100%; height: auto; max-width: 100%; }
+  figcaption { margin-top: 14px; font-size: 13.5px; color: var(--ink-soft); max-width: 80ch; }
+
+  .svg-label { font-family: var(--mono); font-size: 12px; fill: currentColor; }
+  .svg-label-sm { font-family: var(--mono); font-size: 10.5px; fill: currentColor; }
+
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin: 20px 0 14px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; }
+  .card h4 { font-family: var(--mono); font-size: 13.5px; margin: 0 0 8px; color: var(--accent-ink); }
+  .card p { font-size: 14px; margin: 0; color: var(--ink-soft); }
+
+  footer { margin-top: 80px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 13px; color: var(--ink-soft); }
+  footer p { max-width: 74ch; }
+
+  @media (max-width: 640px) {
+    nav.toc ol { columns: 1; }
+    .page { padding: 36px 16px 64px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<div class="page">
+
+  <header class="masthead">
+    <span class="eyebrow">Portfolio sample &middot; Backend + admin UI</span>
+    <h1 class="title">Vehicle Inventory Platform</h1>
+    <p class="subtitle">A dealership vehicle-inventory backend built around a clean, layered REST API — Spring Boot, Spring Security JWT auth, JPA/Hibernate, and Supabase for both the database and photo storage — with a deliberately plain admin UI on top.</p>
+    <div class="scope-tags">
+      <span>Java 17+</span>
+      <span>Spring Boot</span>
+      <span>Spring Security (JWT)</span>
+      <span>JPA / Hibernate</span>
+      <span>Supabase Postgres</span>
+      <span>Supabase Storage</span>
+      <span>Maven</span>
+    </div>
+    <div class="meta-row">
+      <span><strong>Workload</strong> &mdash; vehicle CRUD, multi-photo upload, filtered search, dashboard metrics</span>
+      <span><strong>Frontend</strong> &mdash; plain HTML/CSS/JS, no build step</span>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="Table of contents">
+    <span class="eyebrow">In this document</span>
+    <ol>
+      <li><a href="#brief">The brief, and where each ask landed</a></li>
+      <li><a href="#architecture">Architecture</a></li>
+      <li><a href="#data">Data model &amp; validation</a></li>
+      <li><a href="#api">REST API surface</a></li>
+      <li><a href="#security">Security</a></li>
+      <li><a href="#ui">Admin UI walkthrough</a></li>
+      <li><a href="#testing">Testing &amp; verification</a></li>
+      <li><a href="#running">Running it</a></li>
+    </ol>
+  </nav>
+
+  <div class="callout">
+    <span class="mark">i</span>
+    <div>
+      <p><strong>What this document is.</strong> A self-contained reference build demonstrating the same scope as a typical "backend + minimal admin UI" inventory-management engagement. It was built to have something concrete to walk through and actually run, after the artifacts from an earlier, similarly-scoped client engagement were no longer available to attach directly.</p>
+      <p>Every credential, bucket name, and connection string in the repo is a placeholder. The code, tests, and the build/iteration log referenced in &sect;7 are real and reviewable, not narrative.</p>
+    </div>
+  </div>
+
+  <section id="brief">
+    <span class="eyebrow">01</span>
+    <h2><span class="num">&sect;1</span> The brief, and where each ask landed</h2>
+    <p>The request was specific enough to check off item by item rather than paraphrase — so that's how this section is laid out.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Asked for</th><th>Delivered as</th></tr></thead>
+        <tbody>
+          <tr><td>Backend-first, minimal admin UI</td><td>Full REST API is the primary surface (&sect;4); the UI is four plain HTML pages with no framework or build step.</td></tr>
+          <tr><td>Clean architecture, maintainable code</td><td>Layered packages (<code>domain</code> &rarr; <code>repository</code> &rarr; <code>service</code> &rarr; <code>web</code>), DTOs so entities never cross the wire, one typed exception hierarchy + a single <code>@RestControllerAdvice</code>.</td></tr>
+          <tr><td>Well-designed REST API</td><td>Resource-oriented routes, pagination + filter params on the list endpoint, correct status codes (201/204/404/409/401), OpenAPI/Swagger UI generated from the code.</td></tr>
+          <tr><td>Java 17+, Spring Boot, Spring Security, JPA/Hibernate, Supabase, Maven</td><td>All five, plus Flyway for schema migrations and springdoc for API docs &mdash; see &sect;2.</td></tr>
+          <tr><td>Vehicle fields (brand, model, year, engine, VIN, mileage, prices, status, condition, notes, photos, timestamps)</td><td>Every field, on the <code>Vehicle</code> entity (&sect;3) &mdash; VIN gets real format validation, not just a text box.</td></tr>
+          <tr><td>Add / edit / list / filter / photos / dashboard</td><td>All five screens, described in &sect;6.</td></tr>
+          <tr><td>"Functionality over design"</td><td>No CSS framework, no client-side build step &mdash; a stylesheet and a few <code>fetch()</code> calls.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="architecture">
+    <span class="eyebrow">02</span>
+    <h2><span class="num">&sect;2</span> Architecture</h2>
+    <p>One Spring Boot process serves both the JSON API and the static admin UI. It talks to Supabase in exactly two ways: JDBC for the relational data, and a plain REST call to Supabase Storage for photos &mdash; no Node-oriented client SDK, no extra service to run.</p>
+
+    <figure class="bleed wide">
+      <svg viewBox="0 0 860 460" role="img" aria-label="The browser admin UI logs in to get a JWT, then calls the Spring Boot REST API with that token on every request. The API is the only thing that talks to Supabase: JPA/Hibernate to Postgres for vehicle data, and a plain REST call to Supabase Storage for photos.">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+          </marker>
+        </defs>
+
+        <!-- Browser -->
+        <rect x="270" y="20" width="320" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+        <text x="430" y="43" text-anchor="middle" class="svg-label" font-weight="600">Admin UI (browser)</text>
+        <text x="430" y="60" text-anchor="middle" class="svg-label-sm" opacity="0.75">login / dashboard / vehicles / vehicle-form</text>
+
+        <!-- login round-trip -->
+        <line x1="330" y1="76" x2="330" y2="118" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow)"/>
+        <text x="200" y="100" class="svg-label-sm" opacity="0.8">1. POST /api/auth/login</text>
+
+        <line x1="530" y1="118" x2="530" y2="76" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow)"/>
+        <text x="545" y="100" class="svg-label-sm" opacity="0.8">2. signed JWT</text>
+
+        <!-- API -->
+        <rect x="230" y="120" width="400" height="80" rx="6" fill="var(--accent-soft)" stroke="currentColor" stroke-width="1.5"/>
+        <text x="430" y="148" text-anchor="middle" class="svg-label" font-weight="600">Spring Boot REST API</text>
+        <text x="430" y="166" text-anchor="middle" class="svg-label-sm" opacity="0.8">Controller &rarr; Service &rarr; Repository</text>
+        <text x="430" y="182" text-anchor="middle" class="svg-label-sm" opacity="0.8">JwtAuthFilter checks Authorization: Bearer on every /api/** route</text>
+
+        <!-- ongoing calls -->
+        <line x1="430" y1="76" x2="430" y2="118" stroke="currentColor" stroke-width="1.8" marker-end="url(#arrow)" opacity="0.9"/>
+        <text x="440" y="72" class="svg-label-sm" opacity="0.8">3. every later call: Authorization: Bearer &lt;JWT&gt;</text>
+
+        <!-- down to Postgres and Storage -->
+        <line x1="340" y1="200" x2="230" y2="270" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow)"/>
+        <text x="185" y="240" class="svg-label-sm" opacity="0.8">JPA / Hibernate</text>
+
+        <line x1="520" y1="200" x2="630" y2="270" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow)"/>
+        <text x="600" y="240" class="svg-label-sm" opacity="0.8">REST + service-role key</text>
+
+        <rect x="60" y="272" width="260" height="70" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+        <text x="190" y="298" text-anchor="middle" class="svg-label" font-weight="600">Supabase Postgres</text>
+        <text x="190" y="315" text-anchor="middle" class="svg-label-sm" opacity="0.8">vehicles &middot; vehicle_photos</text>
+        <text x="190" y="330" text-anchor="middle" class="svg-label-sm" opacity="0.8">admin_users</text>
+
+        <rect x="540" y="272" width="260" height="70" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 3"/>
+        <text x="670" y="298" text-anchor="middle" class="svg-label" font-weight="600">Supabase Storage</text>
+        <text x="670" y="315" text-anchor="middle" class="svg-label-sm" opacity="0.8">vehicle-photos bucket</text>
+        <text x="670" y="330" text-anchor="middle" class="svg-label-sm" opacity="0.8">(public read)</text>
+
+        <text x="60" y="400" class="svg-label-sm" opacity="0.6">Dashed border = separately managed component. The API is the only thing with Supabase credentials — the browser never sees them.</text>
+      </svg>
+      <figcaption><strong>Fig. 1 &mdash;</strong> The browser only ever holds a short-lived JWT, never a database credential or a Supabase key. Every request after login carries that JWT; the API is the sole holder of the Postgres connection and the Storage service-role key.</figcaption>
+    </figure>
+  </section>
+
+  <section id="data">
+    <span class="eyebrow">03</span>
+    <h2><span class="num">&sect;3</span> Data model &amp; validation</h2>
+    <div class="card-grid">
+      <div class="card">
+        <h4>Vehicle</h4>
+        <p>brand, model, year, engine, VIN, mileage, purchase/selling price, status, condition, notes, photos, dateAdded, lastUpdated &mdash; every field from the brief, no more.</p>
+      </div>
+      <div class="card">
+        <h4>VIN validation</h4>
+        <p>Enforced as the real 17-character format (letters/digits, excluding I/O/Q), unique at both the application and database level &mdash; not just "some text".</p>
+      </div>
+      <div class="card">
+        <h4>Status &amp; condition</h4>
+        <p>Enums (<code>AVAILABLE</code>, <code>RESERVED</code>, <code>SOLD</code>, <code>IN_TRANSIT</code>, <code>IN_SERVICE</code>; <code>NEW</code>, <code>USED</code>, <code>CERTIFIED_PRE_OWNED</code>, <code>SALVAGE</code>), exposed via <code>/api/lookups/*</code> so the UI never hard-codes them.</p>
+      </div>
+      <div class="card">
+        <h4>VehiclePhoto</h4>
+        <p>One vehicle to many photos; each row tracks its own Storage path (for clean deletion), display order, and a single "primary" flag for the list/dashboard thumbnail.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="api">
+    <span class="eyebrow">04</span>
+    <h2><span class="num">&sect;4</span> REST API surface</h2>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Endpoint</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><code>POST /api/auth/login</code></td><td>Returns a JWT</td></tr>
+          <tr><td><code>GET /api/vehicles</code></td><td>Paginated search: brand, model, year, status, condition, min/max price, free-text</td></tr>
+          <tr><td><code>POST</code> / <code>PUT /api/vehicles/{id}</code></td><td>Create / update</td></tr>
+          <tr><td><code>DELETE /api/vehicles/{id}</code></td><td>Deletes the vehicle and its stored photos</td></tr>
+          <tr><td><code>POST /api/vehicles/{id}/photos</code></td><td>Multipart upload, one or more files</td></tr>
+          <tr><td><code>DELETE .../photos/{photoId}</code></td><td>Removes one photo, from Storage too</td></tr>
+          <tr><td><code>PUT .../photos/{photoId}/primary</code></td><td>Sets the list/dashboard thumbnail</td></tr>
+          <tr><td><code>GET /api/dashboard/summary</code></td><td>Counts by status, inventory value, revenue/profit to date</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Full interactive docs at <code>/swagger-ui.html</code> once the app is running &mdash; generated from the code, not hand-maintained.</p>
+  </section>
+
+  <section id="security">
+    <span class="eyebrow">05</span>
+    <h2><span class="num">&sect;5</span> Security</h2>
+    <ul class="plain">
+      <li><strong>Stateless JWT</strong> &mdash; one admin role, since this is an internal tool rather than a multi-tenant product. No server-side session state to manage or scale.</li>
+      <li><strong>401 vs. 403, actually correct</strong> &mdash; a missing/invalid token gets 401; this took an explicit fix during testing (&sect;7) because Spring Security's default for a pure-JWT setup is a bare 403.</li>
+      <li><strong>Secrets stay in the environment</strong> &mdash; JWT signing secret, Supabase service-role key, and the initial admin password are all read from environment variables. Nothing sensitive is committed.</li>
+      <li><strong>Passwords are never handled in plaintext beyond the login request itself</strong> &mdash; BCrypt at rest, and the first admin account is seeded once, from an env var, on an empty database.</li>
+    </ul>
+  </section>
+
+  <section id="ui">
+    <span class="eyebrow">06</span>
+    <h2><span class="num">&sect;6</span> Admin UI walkthrough</h2>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Screen</th><th>Does</th></tr></thead>
+        <tbody>
+          <tr><td>Login</td><td>Username/password against <code>/api/auth/login</code>; JWT stored client-side, attached to every subsequent request.</td></tr>
+          <tr><td>Dashboard</td><td>Total vehicles, counts by status, inventory-on-hand cost, potential revenue, and revenue/profit already realized from SOLD vehicles &mdash; plus a recently-added list.</td></tr>
+          <tr><td>Vehicles</td><td>Paginated table with live filters (search text, brand, year, status, condition) and a thumbnail pulled from each vehicle's primary photo.</td></tr>
+          <tr><td>Add / edit vehicle</td><td>Full field set from &sect;3, plus a photo panel once a vehicle exists: multi-file upload, delete, and "make primary".</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="testing">
+    <span class="eyebrow">07</span>
+    <h2><span class="num">&sect;7</span> Testing &amp; verification</h2>
+    <p>15 automated tests (Mockito unit tests on the service layer; full-context MockMvc tests for auth, CRUD, validation, and search) all pass. More usefully for a bid: the app was actually started and driven through the browser &mdash; login, add a vehicle, confirm it shows up filtered correctly, confirm the dashboard math is right &mdash; not just trusted to work because the tests were green. The full raw log is in the repo at <code>docs/build-log.txt</code>; the short version:</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Found during</th><th>Issue</th><th>Fix</th></tr></thead>
+        <tbody>
+          <tr><td><code>mvn test</code></td><td><span class="pill warn">silent</span> Two MockMvc test classes never ran &mdash; named <code>*IT.java</code>, which is a Failsafe (not Surefire) convention that was never wired up.</td><td>Renamed to <code>*Test.java</code> so <code>mvn test</code> alone runs everything.</td></tr>
+          <tr><td><code>mvn test</code> logs</td><td><span class="pill bad">schema</span> The <code>vehicles</code> table failed to create against H2 &mdash; <code>YEAR</code> is a reserved word there.</td><td>Mapped the <code>year</code> field to a <code>model_year</code> column; API/JSON shape unchanged.</td></tr>
+          <tr><td><code>mvn test</code></td><td><span class="pill warn">status code</span> Unauthenticated requests returned 403, not 401.</td><td>Added an explicit <code>AuthenticationEntryPoint</code> for the pure-JWT setup.</td></tr>
+          <tr><td>live run</td><td><span class="pill bad">startup</span> <code>mvn spring-boot:run</code> crashed &mdash; H2 was test-scope only, so the dev profile had no driver at runtime.</td><td>Moved H2 to <code>runtime</code> scope.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="running">
+    <span class="eyebrow">08</span>
+    <h2><span class="num">&sect;8</span> Running it</h2>
+    <p>No Supabase project needed just to try it out &mdash; the <code>dev</code> profile uses an in-memory H2 database:</p>
+    <pre class="code" style="display:block; padding:14px 16px; overflow-x:auto; white-space:pre;">export APP_ADMIN_SEED_PASSWORD=ChangeMe123!
+mvn spring-boot:run
+# -&gt; http://localhost:8080, sign in with admin / ChangeMe123!</pre>
+    <p>Photo upload needs a real Supabase project (a public Storage bucket + the service-role key) &mdash; full setup steps are in the repo's README. Everything else works with nothing but a JDK.</p>
+  </section>
+
+  <footer>
+    <p>This is a portfolio/demo build, not a record of a specific past engagement &mdash; credentials, connection strings, and bucket names throughout are placeholders. It was built to have something concrete to show and actually run after the artifacts from a prior, similarly-scoped engagement were no longer available. The code, tests, and build/iteration log referenced above are real files in the accompanying repository, not illustrations.</p>
+  </footer>
+
+</div>

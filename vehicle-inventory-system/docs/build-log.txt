@@ -1,0 +1,249 @@
+VEHICLE INVENTORY SYSTEM — BUILD, ITERATION & TEST LOG
+=======================================================
+Portfolio/demo build. Not a record of a specific past client engagement — see
+README.md and docs/case-study.html for that context.
+
+
+1. ORIGINAL BRIEF (as provided)
+--------------------------------
+The application will primarily be a backend system with a minimal admin UI.
+The focus is on clean architecture, maintainable code, and a well-designed
+REST API.
+
+Tech Stack
+- Java 17+
+- Spring Boot
+- Spring Security
+- JPA / Hibernate
+- Supabase
+- Maven or Gradle
+
+Project Features
+The system should allow management of cars with information such as:
+- Brand
+- Model
+- Year
+- Engine
+- VIN
+- Mileage
+- Purchase Price
+- Selling Price
+- Current Status (Available, Reserved, Sold, In Transit, etc.)
+- Vehicle Condition
+- Notes
+- Multiple Photos
+- Date Added
+- Last Updated
+
+Frontend
+Only a very simple admin interface is needed to:
+- Add vehicles
+- Edit vehicles
+- Upload photos
+- View vehicle list
+- Filter/search vehicles
+- View dashboard
+
+"The UI doesn't need to be fancy. Functionality is much more important than
+design."
+
+
+2. ENVIRONMENT CHECK
+---------------------
+    $ java -version
+    java version "21.0.8" 2025-07-15 LTS
+
+    $ mvn -version
+    Apache Maven 3.9.11
+    Java version: 21.0.8
+
+Build targets Java 17 (pom.xml <java.version>17</java.version>) — verified to
+also build and run cleanly under the JDK 21 actually installed here, which is
+the point of targeting "17+".
+
+
+3. PROJECT SCAFFOLD
+---------------------
+Maven project created from scratch (no archetype) under:
+    vehicle-inventory-system/
+        pom.xml
+        src/main/java/com/dealerhub/inventory/
+            config/ domain/ repository/ dto/ service/ security/ web/
+            exception/ mapper/ seed/
+        src/main/resources/
+            application.yml, application-dev.yml, application-prod.yml
+            db/migration/V1__init_schema.sql
+            static/ (plain HTML/CSS/JS admin UI)
+        src/test/java/com/dealerhub/inventory/...
+        src/test/resources/application-test.yml
+
+Dependencies (see pom.xml): spring-boot-starter-web, -data-jpa, -security,
+-validation, -actuator; postgresql driver; flyway-core + flyway-database-
+postgresql; jjwt (api/impl/jackson) for JWT; springdoc-openapi-starter-webmvc-
+ui for Swagger UI; lombok; h2 (see §5.4 for why this is "runtime" scope, not
+"test"); spring-boot-starter-test + spring-security-test.
+
+
+4. INITIAL COMPILE
+--------------------
+    $ mvn -q -o compile
+    [ERROR] Non-resolvable parent POM ... Cannot access central in offline
+            mode
+
+Expected — nothing was cached locally yet for a brand-new project.
+
+    $ mvn -q compile
+    (no output = success)
+
+Confirms outbound network access to Maven Central is available in this
+environment and the dependency tree resolves cleanly.
+
+
+5. TEST ITERATIONS
+--------------------
+Four real issues were caught and fixed during this build, in the order found.
+Each is a genuine bug that would have shipped if the code had only been
+written and never actually run.
+
+5.1  Integration tests silently never ran
+    Symptom : `mvn test` reported BUILD SUCCESS with only 6 tests executed
+              (InventoryApplicationTests + VehicleServiceTest). The two
+              @SpringBootTest/MockMvc classes were named VehicleControllerIT
+              and AuthControllerIT.
+    Cause   : Maven Surefire's default include pattern only picks up
+              *Test.java (and a few similar patterns) — *IT.java is the
+              Failsafe convention, bound to `mvn verify`, and no Failsafe
+              plugin was configured in this pom.xml. The IT classes were
+              being compiled but never executed by `mvn test`.
+    Fix     : Renamed VehicleControllerIT.java -> VehicleControllerTest.java
+              and AuthControllerIT.java -> AuthControllerTest.java (class
+              declarations updated to match) so `mvn test` alone runs the
+              whole suite with no extra plugin wiring needed.
+
+5.2  H2 schema creation failing on the `vehicles` table
+    Symptom : Buried in the same test run's log (not a build failure, just a
+              WARN — easy to miss): Hibernate's auto-DDL against the H2
+              dev/test database threw a syntax error creating the `vehicles`
+              table, then a second error trying to add the vehicle_photos ->
+              vehicles foreign key ("Table VEHICLES not found").
+    Cause   : YEAR is a reserved word in H2's grammar. The entity's `year`
+              field was mapping to an unquoted `year` column, which H2's
+              parser rejected outright — so the whole table silently failed
+              to exist. (PostgreSQL, the real target, does not reserve YEAR
+              as an identifier, so this would NOT have surfaced against a
+              real Supabase database — only against H2, and only because
+              the table failed to create, not because of a runtime query.)
+    Fix     : Vehicle.java's `year` field now maps to `@Column(name =
+              "model_year")` — the Java/JSON field name stays `year`
+              (that's what the API and callers should see); only the SQL
+              column name changed. Applied the same column name in
+              db/migration/V1__init_schema.sql so dev (H2) and prod
+              (Supabase Postgres via Flyway) stay in sync.
+
+5.3  Anonymous requests returned 403 instead of 401
+    Symptom : VehicleControllerTest.anonymousRequestIsRejectedWithUnauthorized
+              failed: "Status expected:<401> but was:<403>".
+    Cause   : No formLogin()/httpBasic() is configured (this API is pure
+              JWT), so Spring Security had no AuthenticationEntryPoint wired
+              up and fell back to rejecting unauthenticated requests with a
+              bare 403 rather than a 401.
+    Fix     : SecurityConfig now sets an explicit
+              `.exceptionHandling(ex -> ex.authenticationEntryPoint(...))`
+              that returns 401 for any request that reaches the filter
+              chain unauthenticated — the correct, REST-conventional status
+              for "you're not logged in" vs. 403's "you're logged in but not
+              allowed."
+
+    Result after 5.1-5.3:
+    $ mvn test
+    Tests run: 15, Failures: 0, Errors: 0, Skipped: 0
+    BUILD SUCCESS
+      - InventoryApplicationTests ..... 1 test  (context loads)
+      - VehicleServiceTest ............ 5 tests (Mockito unit tests)
+      - AuthControllerTest ............ 3 tests (login, bad password, token
+                                                  grants access downstream)
+      - VehicleControllerTest ......... 6 tests (auth required, CRUD,
+                                                  duplicate VIN -> 409,
+                                                  validation -> 400 with
+                                                  field errors, search
+                                                  filters, delete cascades
+                                                  to photos)
+
+5.4  `mvn spring-boot:run` crashed on startup: "Cannot load driver class:
+     org.h2.Driver"
+    Symptom : `mvn test` was fully green, but actually running the app (dev
+              profile, H2) failed immediately with a HikariDataSource /
+              driver-loading exception.
+    Cause   : The h2 dependency was declared with `<scope>test</scope>`, so
+              it's on the test classpath but NOT on the classpath for an
+              actual `spring-boot:run` execution. Tests alone never caught
+              this because tests only ever exercised the Spring context via
+              the test classpath.
+    Fix     : Changed h2's scope from `test` to `runtime` in pom.xml — the
+              whole point of the H2-backed `dev` profile is letting
+              `mvn spring-boot:run` work with zero external database setup,
+              so H2 has to be present at actual runtime, not just in tests.
+
+
+6. LIVE VERIFICATION (not just `mvn test`)
+---------------------------------------------
+After the fixes above, the app was actually started and driven through the
+browser rather than trusting the test suite alone:
+
+    $ mvn spring-boot:run \
+        -Dspring-boot.run.jvmArguments=-Dapp.admin.seed-password=ChangeMeTest123!
+
+    Started InventoryApplication in 6.995 seconds
+    Seeded initial admin user 'admin'
+
+Manual pass through the running app:
+  1. GET  /                    -> redirected to /login.html
+  2. Signed in as admin/ChangeMeTest123!
+     POST /api/auth/login      -> 200, JWT issued
+  3. Dashboard loaded with all-zero stats (empty database) — confirmed the
+     "no vehicles yet" empty state renders instead of a blank/broken screen.
+  4. Filled out "Add vehicle" (2022 Toyota Camry, VIN 4T1BF1FK5CU123456,
+     $18,000 purchase / $21,500 selling) and submitted.
+     POST /api/vehicles        -> 201 Created
+     GET  /api/vehicles/{id}   -> 200 (edit view repopulated correctly,
+                                  Delete button and Photos panel now visible)
+  5. Vehicles list page: the new vehicle appears with the correct status
+     badge (AVAILABLE), formatted mileage/price, and working
+     filter/pagination controls.
+  6. Dashboard, reloaded: Total vehicles 1, Available 1, Inventory on hand
+     (cost) $18,000.00, Potential revenue $21,500.00, Revenue/profit to date
+     correctly $0.00 (nothing SOLD yet) — confirms the aggregation logic in
+     DashboardService, not just that a number renders.
+
+Photo upload against real Supabase Storage was not exercised in this pass —
+that requires a live Supabase project's URL/service-role key, which this demo
+environment doesn't have configured (see README.md's Supabase setup section).
+Every other feature in the brief was driven end-to-end through the browser,
+not just unit-tested.
+
+Final regression check after the pom.xml scope change (§5.4):
+    $ mvn test
+    Tests run: 15, Failures: 0, Errors: 0, Skipped: 0
+    BUILD SUCCESS
+
+
+7. COMMAND REFERENCE
+-----------------------
+Run the test suite:
+    mvn test
+
+Run locally against H2 (no Supabase project needed for this):
+    export APP_ADMIN_SEED_PASSWORD=ChangeMe123!
+    mvn spring-boot:run
+    # -> http://localhost:8080, sign in with admin / ChangeMe123!
+
+Run against real Supabase (production profile):
+    SPRING_PROFILES_ACTIVE=prod \
+    SUPABASE_DB_URL=... SUPABASE_DB_USERNAME=... SUPABASE_DB_PASSWORD=... \
+    SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... \
+    APP_JWT_SECRET=... APP_ADMIN_SEED_PASSWORD=... \
+    mvn spring-boot:run
+
+Package a runnable jar:
+    mvn clean package
+    java -jar target/vehicle-inventory-system.jar
