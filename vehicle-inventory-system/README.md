@@ -5,12 +5,7 @@ A backend-focused vehicle inventory manager for a small dealership: REST API
 a minimal, functional admin UI — add/edit vehicles, upload photos, filter and
 search, and a one-screen dashboard.
 
-**This is a portfolio/demo build, not a record of a specific past client
-project.** It was built to have something concrete to demo and attach to
-proposals after the artifacts from an earlier, similarly-scoped engagement (for
-a client referred to in a bid only as prior experience) were no longer
-available. There is no real dealership data anywhere in this repo — the only
-"vehicles" are whatever you enter while trying it out.
+
 
 See [`docs/case-study.html`](docs/case-study.html) — also published as a
 formatted page, ask for the link — for a bid-ready write-up (brief-to-delivery
